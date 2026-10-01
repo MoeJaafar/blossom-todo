@@ -403,6 +403,24 @@
     }
     setInterval(renderDate, 60_000);
     connectAppBar();
+    setUpInstalledApp();
+  }
+
+  // Installed desktop app (Edge "Install this site as an app")
+  function setUpInstalledApp() {
+    if (inOutlook || window.parent !== window) return; // not inside Outlook/Teams frames
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
+    // First launch as an app: open at a cozy to-do-list size instead of full screen
+    if (matchMedia("(display-mode: standalone)").matches) {
+      try {
+        if (!localStorage.getItem("blossomSized")) {
+          localStorage.setItem("blossomSized", "1");
+          window.resizeTo(480, 760);
+        }
+      } catch {}
+    }
   }
 
   // Running as an app in Outlook's left app bar (a Microsoft 365 personal tab)

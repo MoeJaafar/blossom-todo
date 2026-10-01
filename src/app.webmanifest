@@ -1,0 +1,15 @@
+{
+  "name": "Blossom To-Do",
+  "short_name": "Blossom To-Do",
+  "description": "A cozy lavender & cherry-blossom to-do list with Stardew-style pixel charm.",
+  "id": "./taskpane.html",
+  "start_url": "./taskpane.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fbf3ff",
+  "theme_color": "#f5e9ff",
+  "icons": [
+    { "src": "../assets/icons/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "../assets/icons/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
