@@ -1,0 +1,506 @@
+@font-face {
+  font-family: "Blossom Pixel";
+  src: url("../assets/fonts/PixelifySans.ttf") format("truetype");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+/* ---------- Palette (same as the YouTube theme) ------------------------ */
+
+:root {
+  --bg: #fbf3ff;
+  --surface: #fff4fb;
+  --raised: #f5e9ff;
+  --hover: #ecdaff;
+  --text: #3b2350;
+  --text-2: #7a5a93;
+  --text-3: #a68dbb;
+  --accent: #a855c8;
+  --accent-2: #f27fb5;
+  --accent-soft: #ffd6ea;
+  --frame-dark: #4a2a6b;
+  --frame-mid: #c9a6ef;
+  --frame-light: #f3e6ff;
+  --shadow: rgba(74, 42, 107, 0.22);
+  --tile: url("../assets/img/tile-light.svg");
+  --check-bg: #fff;
+  --check-border: var(--frame-dark);
+  --font: "Blossom Pixel", "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #1d1327;
+  --surface: #251932;
+  --raised: #2f2041;
+  --hover: #3b2852;
+  --text: #f7ebff;
+  --text-2: #c9addf;
+  --text-3: #9a80b2;
+  --accent: #d39bf7;
+  --accent-2: #ff9ccb;
+  --accent-soft: #4b2a4a;
+  --frame-dark: #0f0818;
+  --frame-mid: #8a5fb8;
+  --frame-light: #3b2852;
+  --shadow: rgba(0, 0, 0, 0.45);
+  --tile: url("../assets/img/tile-dark.svg");
+  --check-bg: var(--raised);
+  --check-border: var(--frame-mid);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  padding: 14px 12px 18px;
+  font-family: var(--font);
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg) var(--tile) 0 0 / 96px 96px;
+  image-rendering: pixelated;
+  -webkit-font-smoothing: antialiased;
+}
+
+#petals {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------- Stardew-style parchment panel ----------------------------- */
+
+.panel {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+  margin: 7px auto;
+  padding: 14px 14px 10px;
+  background: var(--surface);
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 2px var(--frame-dark),
+    0 0 0 5px var(--frame-mid),
+    0 0 0 7px var(--frame-dark),
+    5px 7px 0 7px var(--shadow);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  text-shadow: 2px 2px 0 var(--accent-soft);
+  white-space: nowrap;
+}
+
+.sprite {
+  width: 18px;
+  height: 18px;
+}
+.sway {
+  animation: sway 2.6s ease-in-out infinite;
+}
+.sway.delay {
+  animation-delay: -1.3s;
+}
+@keyframes sway {
+  0%, 100% { transform: rotate(-14deg); }
+  50% { transform: rotate(14deg); }
+}
+
+.farm-date {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 6px 0 12px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.farm-date .dot {
+  width: 4px;
+  height: 4px;
+  background: var(--accent-2);
+}
+
+/* ---------- Progress ---------------------------------------------------- */
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 2px 14px;
+}
+.progress-bar {
+  flex: 1;
+  height: 12px;
+  padding: 2px;
+  background: var(--raised);
+  box-shadow: 0 0 0 2px var(--frame-dark);
+}
+#progressFill {
+  width: 0;
+  height: 100%;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 6px, rgba(255, 255, 255, 0.35) 6px 8px),
+    linear-gradient(90deg, var(--accent-2), var(--accent));
+  transition: width 0.35s steps(8);
+}
+#progressText {
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+/* ---------- Inputs & buttons ------------------------------------------- */
+
+.add-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 0;
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px var(--frame-dark), inset 2px 2px 0 var(--shadow);
+  outline: none;
+}
+input[type="text"]::placeholder {
+  color: var(--text-3);
+}
+input[type="text"]:focus {
+  box-shadow: 0 0 0 2px var(--frame-dark), 0 0 0 4px var(--accent-2);
+}
+
+.btn {
+  font: inherit;
+  font-weight: 700;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:focus-visible,
+.tab:focus-visible,
+.link-btn:focus-visible {
+  outline: 2px dashed var(--accent);
+  outline-offset: 3px;
+}
+
+.btn-primary {
+  height: 34px;
+  padding: 0 14px;
+  color: #fff;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  box-shadow: 0 0 0 2px var(--frame-dark), 2px 3px 0 2px var(--shadow);
+}
+
+.btn-soft {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 32px;
+  margin: 4px 0 12px;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--raised);
+  box-shadow: 0 0 0 2px var(--frame-mid);
+}
+.btn-soft:hover {
+  background: var(--hover);
+}
+
+/* pixel envelope icon */
+.env {
+  position: relative;
+  width: 14px;
+  height: 10px;
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.env::before,
+.env::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  width: 8px;
+  height: 2px;
+  background: var(--accent);
+}
+.env::before {
+  left: -1px;
+  transform: rotate(32deg);
+  transform-origin: left;
+}
+.env::after {
+  right: -1px;
+  transform: rotate(-32deg);
+  transform-origin: right;
+}
+
+/* ---------- Tabs -------------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  border-bottom: 2px dashed var(--frame-mid);
+  padding-bottom: 10px;
+}
+.tab {
+  flex: 1;
+  height: 28px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-2);
+  background: var(--bg);
+  border: 2px solid var(--frame-mid);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.tab:hover {
+  background: var(--hover);
+}
+.tab.active {
+  color: #fff;
+  font-weight: 700;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  border-color: var(--frame-dark);
+}
+
+/* ---------- List -------------------------------------------------------- */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 8px 8px 10px;
+  background: var(--bg);
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--frame-mid);
+  animation: pop-in 0.22s steps(4);
+}
+.item:hover {
+  background: var(--raised);
+}
+@keyframes pop-in {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Stardew-style pixel checkbox */
+.check {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  padding: 0;
+  border: 0;
+  background: var(--check-bg);
+  box-shadow: 0 0 0 2px var(--check-border), inset 2px 2px 0 rgba(74, 42, 107, 0.15);
+  cursor: pointer;
+}
+.item.done .check {
+  background: var(--accent-2);
+}
+.item.done .check::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 2px;
+  box-shadow:
+    3px 8px 0 #fff, 3px 10px 0 #fff,
+    5px 10px 0 #fff, 5px 12px 0 #fff,
+    7px 12px 0 #fff, 7px 10px 0 #fff,
+    9px 8px 0 #fff, 9px 10px 0 #fff,
+    11px 6px 0 #fff, 11px 8px 0 #fff,
+    13px 4px 0 #fff, 13px 6px 0 #fff;
+}
+.check:focus-visible {
+  outline: 2px dashed var(--accent);
+  outline-offset: 4px;
+}
+
+.item-body {
+  flex: 1;
+  min-width: 0;
+}
+.item-text {
+  display: block;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+.item.done .item-text {
+  color: var(--text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--accent-2);
+  text-decoration-thickness: 2px;
+}
+.item-edit {
+  width: 100%;
+  height: 26px !important;
+}
+
+.item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.email-link {
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  font: inherit;
+  color: var(--accent);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+button.email-link:hover {
+  text-decoration: underline dotted;
+}
+span.email-link {
+  cursor: default;
+}
+
+.delete {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-3);
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.item:hover .delete,
+.delete:focus-visible {
+  opacity: 1;
+}
+.delete:hover {
+  color: #fff;
+  background: var(--accent-2);
+}
+
+.empty {
+  padding: 22px 0 10px;
+  text-align: center;
+  color: var(--text-2);
+}
+.empty img {
+  width: 36px;
+  height: 36px;
+  animation: sway 2.6s ease-in-out infinite;
+}
+.empty p {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+/* ---------- Footer ------------------------------------------------------ */
+
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.link-btn {
+  padding: 0;
+  font: inherit;
+  color: var(--text-2);
+  text-decoration: underline dotted;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.link-btn:hover {
+  color: var(--accent-2);
+}
+.credit img {
+  width: 12px;
+  height: 12px;
+  vertical-align: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Full-size app view (Outlook app bar): give the panel some breathing room */
+@media (min-width: 700px) {
+  body {
+    padding-top: 40px;
+  }
+  .panel {
+    max-width: 600px;
+  }
+}

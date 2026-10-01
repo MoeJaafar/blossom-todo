@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blossom To-Do</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <script src="https://res.cdn.office.net/teams-js/2.22.0/js/MicrosoftTeams.min.js"></script>
+    <link rel="stylesheet" href="taskpane.css" />
+  </head>
+  <body>
+    <canvas id="petals" aria-hidden="true"></canvas>
+
+    <main class="panel">
+      <header class="title">
+        <img src="../assets/img/blossom.svg" alt="" class="sprite sway" />
+        <h1>Blossom To-Do</h1>
+        <img src="../assets/img/blossom-lilac.svg" alt="" class="sprite sway delay" />
+      </header>
+
+      <div class="farm-date">
+        <span id="season"></span>
+        <span class="dot"></span>
+        <span id="today"></span>
+      </div>
+
+      <section class="progress" aria-live="polite">
+        <div class="progress-bar"><div id="progressFill"></div></div>
+        <span id="progressText">0 of 0 bloomed</span>
+      </section>
+
+      <form id="addForm" class="add-row" autocomplete="off">
+        <input id="newTask" type="text" maxlength="300" placeholder="Plant a new task..." aria-label="New task" />
+        <button type="submit" class="btn btn-primary">Plant</button>
+      </form>
+
+      <button id="addEmail" type="button" class="btn btn-soft" hidden>
+        <span class="env" aria-hidden="true"></span>
+        <span>Save this email as a task</span>
+      </button>
+
+      <nav class="tabs" role="tablist">
+        <button type="button" role="tab" data-filter="all" class="tab active">All</button>
+        <button type="button" role="tab" data-filter="open" class="tab">Growing</button>
+        <button type="button" role="tab" data-filter="done" class="tab">Bloomed</button>
+      </nav>
+
+      <ul id="list" class="list"></ul>
+
+      <div id="empty" class="empty" hidden>
+        <img src="../assets/img/blossom.svg" alt="" />
+        <p id="emptyText">Your garden is empty. Plant a task!</p>
+      </div>
+
+      <footer>
+        <button id="clearDone" type="button" class="link-btn">clear bloomed</button>
+        <span class="credit">made by Moe <img src="../assets/img/blossom.svg" alt="" /></span>
+      </footer>
+    </main>
+
+    <script src="taskpane.js"></script>
+  </body>
+</html>
