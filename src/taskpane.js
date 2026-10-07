@@ -1,18 +1,23 @@
-// Blossom To-Do — Outlook task pane
-// Tasks are saved in Outlook roaming settings (they follow your mailbox to
-// every device). Opened outside Outlook, it falls back to localStorage so the
-// page can be previewed in a normal browser.
+// Blossom To-Do — Outlook task pane, desktop app and Android app
+// With a Blossom account (src/cloud.js) tasks sync through the cloud to every
+// device. Without one, they're saved in Outlook roaming settings, or in
+// localStorage when the page is opened outside Outlook.
 
 (() => {
   const STORAGE_KEY = "blossomTodos";
   const $ = (id) => document.getElementById(id);
+  const cloud = window.BlossomCloud?.configured ? window.BlossomCloud : null;
+  const native = window.Capacitor?.isNativePlatform?.() ? window.Capacitor.Plugins.Blossom : null;
 
   let todos = [];
   let filter = "all";
   let inOutlook = false;
+  let user = null; // signed-in Blossom account (cloud mode)
+  let unsubscribe = null;
 
   // ---------- Storage ----------------------------------------------------
 
+  // Local storage for when there's no account (and for importing on first sign-in)
   const store = {
     load() {
       try {
@@ -36,21 +41,45 @@
         } catch {}
       }
     },
+    clear() {
+      if (inOutlook) {
+        Office.context.roamingSettings.remove(STORAGE_KEY);
+        Office.context.roamingSettings.saveAsync(() => {});
+      } else {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch {}
+      }
+    },
   };
+
+  // Persist one changed task (cloud: just that task; local: the whole list)
+  function saved(t) {
+    t.updated = Date.now();
+    if (user) cloud.put(user.uid, t);
+    else store.save();
+  }
+
+  function removed(ids) {
+    if (user) ids.forEach((id) => cloud.remove(user.uid, id));
+    else store.save();
+  }
 
   // ---------- Tasks ------------------------------------------------------
 
   function addTodo(text, email) {
     text = text.trim().slice(0, 300);
     if (!text) return;
-    todos.unshift({
+    const t = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       text,
       done: false,
       created: Date.now(),
+      remindAt: null,
       ...(email ? { email } : {}),
-    });
-    store.save();
+    };
+    todos.unshift(t);
+    saved(t);
     render();
   }
 
@@ -58,14 +87,14 @@
     const t = todos.find((x) => x.id === id);
     if (!t) return;
     t.done = !t.done;
-    store.save();
+    saved(t);
     if (t.done && checkEl) petals.burst(checkEl.getBoundingClientRect());
     render();
   }
 
   function remove(id) {
     todos = todos.filter((x) => x.id !== id);
-    store.save();
+    removed([id]);
     render();
   }
 
@@ -74,14 +103,23 @@
     text = text.trim().slice(0, 300);
     if (t && text && text !== t.text) {
       t.text = text;
-      store.save();
+      saved(t);
     }
+    render();
+  }
+
+  function setReminder(id, when) {
+    const t = todos.find((x) => x.id === id);
+    if (!t) return;
+    t.remindAt = when || null;
+    saved(t);
     render();
   }
 
   // ---------- Rendering --------------------------------------------------
 
   function render() {
+    syncNative();
     const list = $("list");
     list.replaceChildren();
 
@@ -142,22 +180,131 @@
       }
       meta.appendChild(link);
     } else {
-      meta.textContent = new Date(t.created).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      });
+      meta.append(
+        new Date(t.created).toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        })
+      );
+    }
+    if (t.remindAt) {
+      const chip = document.createElement("span");
+      chip.className = "remind-chip" + (!t.done && t.remindAt < Date.now() ? " late" : "");
+      chip.innerHTML = '<span class="bell-icon" aria-hidden="true"></span>';
+      chip.append(formatWhen(t.remindAt));
+      chip.title = "Reminder";
+      meta.appendChild(chip);
     }
     body.appendChild(meta);
 
+    const bell = document.createElement("button");
+    bell.type = "button";
+    bell.className = "icon-btn bell" + (t.remindAt ? " on" : "");
+    bell.innerHTML = '<span class="bell-icon" aria-hidden="true"></span>';
+    bell.setAttribute("aria-label", t.remindAt ? "Change reminder" : "Add reminder");
+    bell.title = t.remindAt ? "Change reminder" : "Remind me";
+    bell.addEventListener("click", () => openReminder(t, body));
+
     const del = document.createElement("button");
     del.type = "button";
-    del.className = "delete";
+    del.className = "icon-btn delete";
     del.textContent = "×";
     del.setAttribute("aria-label", "Delete task");
     del.addEventListener("click", () => remove(t.id));
 
-    li.append(check, body, del);
+    li.append(check, body, bell, del);
     return li;
+  }
+
+  // ---------- Reminders --------------------------------------------------
+
+  function formatWhen(ms) {
+    const d = new Date(ms);
+    const day = (offset) => {
+      const x = new Date();
+      x.setDate(x.getDate() + offset);
+      return x.toDateString();
+    };
+    const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    if (d.toDateString() === day(0)) return `Today ${time}`;
+    if (d.toDateString() === day(1)) return `Tomorrow ${time}`;
+    return `${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })} ${time}`;
+  }
+
+  // <input type="datetime-local"> works in local time without a zone
+  const toLocalInput = (ms) => {
+    const d = new Date(ms);
+    return new Date(ms - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  };
+
+  function quickTimes() {
+    const now = new Date();
+    const inHour = new Date(now.getTime() + 60 * 60_000);
+    inHour.setSeconds(0, 0);
+    const tonight = new Date(now);
+    tonight.setHours(19, 0, 0, 0);
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    const opts = [["In 1 hour", inHour]];
+    if (tonight > inHour) opts.push(["Tonight", tonight]);
+    opts.push(["Tomorrow 9am", tomorrow]);
+    return opts;
+  }
+
+  function openReminder(t, body) {
+    document.querySelector(".remind-row")?.remove();
+    const row = document.createElement("div");
+    row.className = "remind-row";
+
+    const quick = document.createElement("div");
+    quick.className = "remind-quick";
+    for (const [label, date] of quickTimes()) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip-btn";
+      b.textContent = label;
+      b.addEventListener("click", () => setReminder(t.id, date.getTime()));
+      quick.appendChild(b);
+    }
+
+    const pick = document.createElement("div");
+    pick.className = "remind-pick";
+    const input = document.createElement("input");
+    input.type = "datetime-local";
+    input.setAttribute("aria-label", "Reminder date and time");
+    input.value = toLocalInput(t.remindAt || quickTimes().at(-1)[1].getTime());
+    const set = document.createElement("button");
+    set.type = "button";
+    set.className = "btn btn-primary btn-small";
+    set.textContent = "Set";
+    set.addEventListener("click", () => {
+      const when = new Date(input.value).getTime();
+      if (when) setReminder(t.id, when);
+    });
+    pick.append(input, set);
+
+    const actions = document.createElement("div");
+    actions.className = "remind-actions";
+    if (t.remindAt) {
+      const clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "link-btn";
+      clear.textContent = "remove reminder";
+      clear.addEventListener("click", () => setReminder(t.id, null));
+      actions.appendChild(clear);
+    }
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "link-btn";
+    cancel.textContent = "cancel";
+    cancel.addEventListener("click", () => render());
+    actions.appendChild(cancel);
+
+    row.append(quick, pick, actions);
+    row.addEventListener("keydown", (e) => e.key === "Escape" && render());
+    body.appendChild(row);
+    if (native) native.requestNotificationPermission().catch(() => {});
   }
 
   function startEdit(t, body, textEl) {
@@ -180,6 +327,111 @@
       if (e.key === "Escape") finish(false);
     });
     input.addEventListener("blur", () => finish(true));
+  }
+
+  // ---------- Account & sync ---------------------------------------------
+
+  function showView(name) {
+    $("loadingView").hidden = name !== "loading";
+    $("authView").hidden = name !== "auth";
+    $("todoView").hidden = name !== "todos";
+    $("account").hidden = !user;
+    if (name !== "todos") $("clearDone").hidden = true;
+    if (user) $("accountEmail").textContent = user.email;
+  }
+
+  function startData() {
+    if (!cloud) {
+      todos = store.load();
+      showView("todos");
+      render();
+      return;
+    }
+    showView("loading");
+    cloud.onUser(async (u) => {
+      unsubscribe?.();
+      unsubscribe = null;
+      user = u;
+      if (!u) {
+        todos = [];
+        native?.signOut().catch(() => {});
+        showView("auth");
+        return;
+      }
+      showView("todos");
+      await importLocalTasks(u);
+      unsubscribe = cloud.subscribe(u.uid, (list) => {
+        todos = list;
+        // Don't yank an open editor away when another device changes something
+        if (document.querySelector(".item-edit, .remind-row")) syncNative();
+        else render();
+      });
+    });
+  }
+
+  // Tasks saved on this device before accounts existed move into the account once
+  async function importLocalTasks(u) {
+    const local = store.load();
+    if (!local.length) return;
+    try {
+      await cloud.importAll(u.uid, local);
+      store.clear();
+    } catch (e) {
+      console.warn("Blossom To-Do: could not import local tasks", e);
+    }
+  }
+
+  function wireAuthForm() {
+    const msg = (text, ok) => {
+      $("authMsg").textContent = text;
+      $("authMsg").classList.toggle("ok", !!ok);
+    };
+    const run = async (action) => {
+      const email = $("authEmail").value.trim();
+      const password = $("authPassword").value;
+      if (!email) return msg("Enter your email first.");
+      if (action !== "reset" && !password) return msg("Enter your password.");
+      $("authView").classList.add("busy");
+      msg("");
+      try {
+        if (action === "signIn") await cloud.signIn(email, password);
+        if (action === "signUp") await cloud.signUp(email, password);
+        if (action === "reset") {
+          await cloud.resetPassword(email);
+          msg("Check your inbox for a reset link.", true);
+        }
+        $("authPassword").value = "";
+      } catch (e) {
+        msg(cloud.friendlyError(e));
+      } finally {
+        $("authView").classList.remove("busy");
+      }
+    };
+    $("authForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      run("signIn");
+    });
+    $("signUp").addEventListener("click", () => run("signUp"));
+    $("forgot").addEventListener("click", () => run("reset"));
+    $("signOut").addEventListener("click", () => cloud.signOut());
+  }
+
+  // Android app: hand tasks to the home-screen widget and reminder alarms
+  let nativeTimer = 0;
+  function syncNative() {
+    if (!native) return;
+    clearTimeout(nativeTimer);
+    nativeTimer = setTimeout(() => {
+      const creds = user && cloud.nativeCredentials();
+      native.sync({ tasks: JSON.stringify(todos), creds: creds ? JSON.stringify(creds) : "" }).catch(() => {});
+    }, 300);
+  }
+
+  // Android widget "+" button opens the app ready to type
+  function checkNativeAction() {
+    native?.takeLaunchAction().then(({ action }) => {
+      if (action === "new" && !$("todoView").hidden) $("newTask").focus();
+    }).catch(() => {});
   }
 
   // ---------- Farm date --------------------------------------------------
@@ -357,8 +609,8 @@
   function init() {
     applyTheme();
     renderDate();
-    todos = store.load();
-    render();
+    if (cloud) wireAuthForm();
+    startData();
     refreshEmailButton();
 
     $("addForm").addEventListener("submit", (e) => {
@@ -387,10 +639,21 @@
     );
 
     $("clearDone").addEventListener("click", () => {
+      const doneIds = todos.filter((t) => t.done).map((t) => t.id);
       todos = todos.filter((t) => !t.done);
-      store.save();
+      removed(doneIds);
       render();
     });
+
+    if (native) {
+      checkNativeAction();
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          checkNativeAction();
+          render(); // refresh "Today"/"late" labels
+        }
+      });
+    }
 
     // When the pane is pinned, Outlook keeps it open as you switch emails
     if (inOutlook) {
@@ -408,7 +671,7 @@
 
   // Installed desktop app (Edge "Install this site as an app")
   function setUpInstalledApp() {
-    if (inOutlook || window.parent !== window) return; // not inside Outlook/Teams frames
+    if (inOutlook || native || window.parent !== window) return; // not inside Outlook/Teams frames or the Android app
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("sw.js").catch(() => {});
     }

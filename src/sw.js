@@ -1,10 +1,12 @@
 // Offline support for the installed app: serve our own files from cache,
 // refresh them in the background so updates arrive on the next launch.
-const CACHE = "blossom-todo-v1";
+const CACHE = "blossom-todo-v2";
 const FILES = [
   "taskpane.html",
   "taskpane.css",
   "taskpane.js",
+  "cloud.js",
+  "firebase-config.js",
   "app.webmanifest",
   "../assets/fonts/PixelifySans.ttf",
   "../assets/img/blossom.svg",

@@ -65,7 +65,8 @@ body {
 }
 
 body {
-  padding: 14px 12px 18px;
+  /* safe-area insets keep the panel clear of the Android status/nav bars */
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 12px calc(18px + env(safe-area-inset-bottom, 0px));
   font-family: var(--font);
   font-size: 15px;
   color: var(--text);
@@ -183,7 +184,10 @@ h1 {
   margin-bottom: 10px;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="datetime-local"] {
   flex: 1;
   min-width: 0;
   height: 34px;
@@ -196,10 +200,13 @@ input[type="text"] {
   box-shadow: 0 0 0 2px var(--frame-dark), inset 2px 2px 0 var(--shadow);
   outline: none;
 }
-input[type="text"]::placeholder {
+input::placeholder {
   color: var(--text-3);
 }
-input[type="text"]:focus {
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="datetime-local"]:focus {
   box-shadow: 0 0 0 2px var(--frame-dark), 0 0 0 4px var(--accent-2);
 }
 
@@ -422,7 +429,7 @@ span.email-link {
   cursor: default;
 }
 
-.delete {
+.icon-btn {
   flex: none;
   width: 22px;
   height: 22px;
@@ -438,13 +445,180 @@ span.email-link {
   opacity: 0;
   transition: opacity 0.12s;
 }
-.item:hover .delete,
-.delete:focus-visible {
+.item:hover .icon-btn,
+.icon-btn:focus-visible,
+.bell.on {
   opacity: 1;
+}
+/* Phones have no hover, so keep the buttons visible */
+@media (hover: none) {
+  .icon-btn {
+    opacity: 1;
+  }
+}
+.bell {
+  display: grid;
+  place-items: center;
+}
+.bell:hover,
+.bell.on {
+  color: var(--accent);
+}
+.bell:hover {
+  background: var(--hover);
 }
 .delete:hover {
   color: #fff;
   background: var(--accent-2);
+}
+
+/* 6x6 pixel bell drawn with box-shadows, in the current text color */
+.bell-icon {
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+.bell-icon::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 2px;
+  color: inherit;
+  box-shadow:
+    4px 0 0, 6px 0 0,
+    2px 2px 0, 4px 2px 0, 6px 2px 0, 8px 2px 0,
+    2px 4px 0, 4px 4px 0, 6px 4px 0, 8px 4px 0,
+    2px 6px 0, 4px 6px 0, 6px 6px 0, 8px 6px 0,
+    0 8px 0, 2px 8px 0, 4px 8px 0, 6px 8px 0, 8px 8px 0, 10px 8px 0,
+    4px 10px 0, 6px 10px 0;
+}
+
+.remind-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  color: var(--accent);
+  background: var(--raised);
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px var(--frame-mid);
+  white-space: nowrap;
+}
+.remind-chip .bell-icon {
+  transform: scale(0.75);
+}
+.remind-chip.late {
+  color: #fff;
+  background: var(--accent-2);
+}
+.item.done .remind-chip {
+  opacity: 0.6;
+}
+
+.remind-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--raised);
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px var(--frame-mid);
+}
+.remind-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip-btn {
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg);
+  border: 2px solid var(--frame-mid);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.chip-btn:hover {
+  background: var(--hover);
+}
+.remind-pick {
+  display: flex;
+  gap: 8px;
+}
+.remind-pick input {
+  height: 30px;
+  font-size: 13px;
+}
+.btn-small {
+  height: 30px;
+  padding: 0 12px;
+}
+.remind-actions {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+}
+
+/* ---------- Sign in ----------------------------------------------------- */
+
+.auth {
+  padding: 4px 2px 8px;
+}
+.auth.busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.auth-intro {
+  margin: 0 0 12px;
+  font-size: 14px;
+  text-align: center;
+  color: var(--text-2);
+}
+#authForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#authForm input {
+  flex: none;
+}
+#authForm .btn-primary {
+  margin-top: 2px;
+}
+.auth .btn-soft {
+  margin-top: 14px;
+}
+.auth-msg {
+  min-height: 1em;
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-align: center;
+  color: var(--accent-2);
+}
+.auth-msg.ok {
+  color: var(--accent);
+}
+.auth .link-btn {
+  display: block;
+  margin: 0 auto;
+  font-size: 13px;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-3);
+  overflow-wrap: anywhere;
 }
 
 .empty {

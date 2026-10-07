@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Blossom To-Do</title>
     <link rel="manifest" href="app.webmanifest" />
     <link rel="icon" href="../assets/icons/icon-32.png" />
@@ -29,6 +29,24 @@
         <span id="today"></span>
       </div>
 
+      <div id="loadingView" class="empty" hidden>
+        <img src="../assets/img/blossom.svg" alt="" />
+        <p>Waking up the garden...</p>
+      </div>
+
+      <section id="authView" class="auth" hidden>
+        <p class="auth-intro">Sign in to sync your garden across your PC and phone.</p>
+        <form id="authForm" autocomplete="on">
+          <input id="authEmail" type="email" autocomplete="username" placeholder="Email" aria-label="Email" />
+          <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password" />
+          <button type="submit" class="btn btn-primary">Sign in</button>
+        </form>
+        <button id="signUp" type="button" class="btn btn-soft">Create a new account</button>
+        <p id="authMsg" class="auth-msg" role="status"></p>
+        <button id="forgot" type="button" class="link-btn">forgot password?</button>
+      </section>
+
+      <div id="todoView" hidden>
       <section class="progress" aria-live="polite">
         <div class="progress-bar"><div id="progressFill"></div></div>
         <span id="progressText">0 of 0 bloomed</span>
@@ -56,13 +74,20 @@
         <img src="../assets/img/blossom.svg" alt="" />
         <p id="emptyText">Your garden is empty. Plant a task!</p>
       </div>
+      </div>
 
       <footer>
         <button id="clearDone" type="button" class="link-btn">clear bloomed</button>
         <span class="credit">made by Moe <img src="../assets/img/blossom.svg" alt="" /></span>
       </footer>
+      <div id="account" class="account" hidden>
+        <span id="accountEmail"></span>
+        <button id="signOut" type="button" class="link-btn">sign out</button>
+      </div>
     </main>
 
+    <script src="firebase-config.js"></script>
+    <script src="cloud.js"></script>
     <script src="taskpane.js"></script>
   </body>
 </html>
